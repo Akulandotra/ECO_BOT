@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EcoBot — Recycling Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#06100a;--s1:#0c1a0f;--s2:#132018;--s3:#1c2e1e;
+  --border:#253828;--border2:#2e4532;
+  --g1:#52e080;--g2:#3cc46a;--g3:#2a9950;
+  --glow:rgba(82,224,128,.18);--glow2:rgba(82,224,128,.07);
+  --text:#dff0df;--tm:#8aae8a;--tmuted:#4d6e4d;
+  --amber:#ffc55a;--red:#ff6b6b;--sky:#60d4f0;
+  --r:14px;--rs:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+
+/* BG */
+#bgWrap{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);animation:orb 20s ease-in-out infinite alternate}
+.orb.a{width:560px;height:560px;background:radial-gradient(circle,#143d1e,transparent 70%);top:-140px;left:-100px;opacity:.5}
+.orb.b{width:420px;height:420px;background:radial-gradient(circle,#0d3018,transparent 70%);bottom:-100px;right:-60px;opacity:.45;animation-delay:-10s}
+.orb.c{width:280px;height:280px;background:radial-gradient(circle,#1a4025,transparent 70%);top:45%;left:48%;opacity:.35;animation-delay:-5s}
+@keyframes orb{to{transform:translate(40px,30px) scale(1.1)}}
+.gridlines{position:absolute;inset:0;background-image:linear-gradient(var(--glow2) 1px,transparent 1px),linear-gradient(90deg,var(--glow2) 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(ellipse 85% 85% at 50% 50%,black 30%,transparent 100%)}
+
+/* LAYOUT */
+.app{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;max-width:860px;margin:0 auto;width:100%}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px 12px;border-bottom:1px solid var(--border);background:rgba(6,16,10,.75);backdrop-filter:blur(24px);flex-shrink:0}
+.logo{display:flex;align-items:center;gap:11px}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--g1),var(--g2));border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 22px var(--glow);animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 22px rgba(82,224,128,.3)}50%{box-shadow:0 0 38px rgba(82,224,128,.6)}}
+.logo-texts{display:flex;flex-direction:column}
+.logo-name{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;color:var(--g1);letter-spacing:-.3px;line-height:1}
+.logo-tag{font-size:.68rem;color:var(--tm);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+.hbadge{display:flex;align-items:center;gap:6px;background:var(--glow);border:1px solid var(--g3);border-radius:99px;padding:5px 13px;font-size:.73rem;color:var(--g1);letter-spacing:.3px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--g1);animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* CHIPS */
+.chips-bar{display:flex;gap:7px;padding:9px 18px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);background:rgba(12,26,15,.4);flex-shrink:0}
+.chips-bar::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;background:var(--s2);border:1px solid var(--border);border-radius:99px;padding:5px 13px;font-size:.77rem;color:var(--tm);cursor:pointer;transition:all .2s;white-space:nowrap;font-family:'Instrument Sans',sans-serif}
+.chip:hover{background:var(--glow);border-color:var(--g3);color:var(--g1)}
+
+/* CHAT */
+.chat{flex:1;overflow-y:auto;padding:20px 18px;display:flex;flex-direction:column;gap:18px;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+
+/* WELCOME */
+.welcome{display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 20px;gap:13px;animation:fadeUp .5s ease both}
+.welcome-emoji{font-size:3.2rem;animation:spin 10s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.welcome h2{font-family:'Syne',sans-serif;font-size:1.65rem;font-weight:800;color:var(--g1)}
+.welcome p{color:var(--tm);max-width:420px;font-size:.92rem;line-height:1.65}
+.wcards{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;width:100%;max-width:540px;margin-top:6px}
+.wcard{background:var(--s2);border:1px solid var(--border);border-radius:var(--rs);padding:13px 10px;cursor:pointer;text-align:left;transition:all .22s}
+.wcard:hover{border-color:var(--g3);background:var(--glow2);transform:translateY(-2px)}
+.wcard-ico{font-size:1.4rem;margin-bottom:5px}
+.wcard-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:2px}
+.wcard-sub{font-size:.76rem;color:var(--tm)}
+
+/* MESSAGES */
+.msg{display:flex;gap:10px;animation:fadeUp .3s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.msg.user{flex-direction:row-reverse}
+.ava{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.ava.bot{background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 0 14px var(--glow)}
+.ava.user{background:var(--s3);border:1px solid var(--border2)}
+.bubble{max-width:74%;padding:12px 15px;border-radius:var(--r);font-size:.91rem;line-height:1.68}
+.msg.bot .bubble{background:var(--s2);border:1px solid var(--border);color:var(--text);border-top-left-radius:4px}
+.msg.user .bubble{background:linear-gradient(135deg,#1d4d30,#152e1e);border:1px solid var(--g3);color:var(--text);border-top-right-radius:4px}
+.bubble strong{color:#a8ffca}
+.bubble ul,.bubble ol{padding-left:18px;margin:5px 0}
+.bubble li{margin:3px 0}
+.bubble code{font-size:.83em;background:rgba(82,224,128,.1);padding:1px 5px;border-radius:4px;color:#a8ffca}
+.badge{display:inline-block;background:var(--glow);border:1px solid var(--g3);color:var(--g1);border-radius:99px;padding:1px 8px;font-size:.73rem;margin:1px 2px}
+.warn-strip{display:flex;align-items:center;gap:6px;margin-top:8px;padding:6px 10px;background:rgba(255,197,90,.08);border:1px solid rgba(255,197,90,.25);border-radius:8px;font-size:.77rem;color:var(--amber)}
+.src-tag{font-size:.7rem;font-weight:600;color:var(--g1);text-shadow: 0 0 5px var(--glow);margin-top:5px;display:flex;align-items:center;gap:4px}
+.uploaded-thumb{max-width:200px;border-radius:var(--rs);border:1px solid var(--border2);margin-bottom:7px;display:block}
+
+/* TYPING */
+.typing-bub{background:var(--s2);border:1px solid var(--border);border-radius:var(--r);border-top-left-radius:4px;padding:13px 16px;display:flex;gap:5px;align-items:center}
+.td{width:7px;height:7px;border-radius:50%;background:var(--tmuted);animation:bounce 1.2s ease-in-out infinite}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-7px);background:var(--g1)}}
+
+/* INPUT AREA */
+.input-area{padding:12px 18px 16px;background:rgba(6,16,10,.8);backdrop-filter:blur(24px);border-top:1px solid var(--border);flex-shrink:0}
+.preview-strip{display:flex;gap:7px;margin-bottom:9px;flex-wrap:wrap}
+.pthumb{position:relative;width:60px;height:60px;border-radius:9px;overflow:hidden;border:1px solid var(--border2);flex-shrink:0}
+.pthumb img{width:100%;height:100%;object-fit:cover}
+.pthumb .rx{position:absolute;top:2px;right:2px;width:17px;height:17px;background:rgba(0,0,0,.75);color:#fff;border:none;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.input-box{display:flex;align-items:flex-end;gap:8px;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);padding:7px 7px 7px 13px;transition:border-color .2s,box-shadow .2s}
+.input-box:focus-within{border-color:var(--g3);box-shadow:0 0 0 3px var(--glow)}
+textarea{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:.91rem;resize:none;max-height:120px;line-height:1.5;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+textarea::placeholder{color:var(--tmuted)}
+.btn-row{display:flex;align-items:flex-end;gap:6px}
+.ibtn{width:35px;height:35px;border-radius:9px;border:1px solid var(--border);background:var(--s1);color:var(--tm);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:16px;flex-shrink:0}
+.ibtn:hover{background:var(--glow);border-color:var(--g3);color:var(--g1)}
+.sbtn{width:38px;height:38px;border-radius:11px;border:none;background:linear-gradient(135deg,var(--g1),var(--g2));color:#06100a;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-size:18px;font-weight:700;flex-shrink:0;box-shadow:0 3px 14px rgba(82,224,128,.35)}
+.sbtn:hover:not(:disabled){transform:scale(1.07);box-shadow:0 4px 22px rgba(82,224,128,.55)}
+.sbtn:disabled{opacity:.38;cursor:not-allowed;transform:none}
+input[type=file]{display:none}
+.hint{font-size:.7rem;color:var(--tmuted);margin-top:7px;text-align:center;letter-spacing:.2px}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(14px);background:#2a1010;border:1px solid #7a2525;color:var(--red);padding:9px 18px;border-radius:var(--rs);font-size:.83rem;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:580px){
+  .wcards{grid-template-columns:1fr 1fr}
+  .bubble{max-width:84%}
+  header{padding:12px 14px 10px}
+  .chips-bar{padding:8px 12px}
+}
+</style>
+</head>
+<body>
+<div id="bgWrap">
+  <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+  <div class="gridlines"></div>
+</div>
+
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">♻️</div>
+      <div class="logo-texts">
+        <span class="logo-name">EcoBot</span>
+        <span class="logo-tag">Recycling Intelligence</span>
+      </div>
+    </div>
+    <div class="hbadge"><div class="dot"></div><span id="statusLabel">Connecting…</span></div>
+  </header>
+
+  <div class="chips-bar">
+    <div class="chip" onclick="chip('How do I recycle plastic bottles?')">🥤 Plastic bottles</div>
+    <div class="chip" onclick="chip('How to recycle cardboard boxes?')">📦 Cardboard</div>
+    <div class="chip" onclick="chip('Where do I recycle old electronics?')">💻 E-waste</div>
+    <div class="chip" onclick="chip('How to compost at home?')">🌱 Composting</div>
+    <div class="chip" onclick="chip('What do recycling numbers mean?')">♻️ Symbols guide</div>
+    <div class="chip" onclick="chip('How to reduce household waste?')">🌍 Reduce waste</div>
+  </div>
+
+  <div class="chat" id="chat">
+    <div class="welcome" id="welcome">
+      <div class="welcome-emoji">♻️</div>
+      <h2>Hello, Eco Warrior! 🌿</h2>
+      <p>I'm EcoBot — your dedicated recycling guide. Ask me anything about recycling, waste reduction, composting, or finding eco resources. Upload a photo of an item to find out how to recycle it!</p>
+      <div class="wcards">
+        <div class="wcard" onclick="chip('How do I start recycling at home?')">
+          <div class="wcard-ico">🏠</div>
+          <div class="wcard-title">Home Recycling</div>
+          <div class="wcard-sub">Get started with home sorting</div>
+        </div>
+        <div class="wcard" onclick="chip('What materials can be recycled?')">
+          <div class="wcard-ico">📋</div>
+          <div class="wcard-title">What's Recyclable</div>
+          <div class="wcard-sub">Full materials guide</div>
+        </div>
+        <div class="wcard" onclick="chip('Tips to reduce everyday waste')">
+          <div class="wcard-ico">🌱</div>
+          <div class="wcard-title">Reduce Waste</div>
+          <div class="wcard-sub">Everyday eco tips</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="preview-strip" id="prevStrip"></div>
+    <div class="input-box">
+      <textarea id="inp" placeholder="Ask about recycling, waste, composting…" rows="1"
+        onkeydown="onKey(event)" oninput="resize(this)"></textarea>
+      <div class="btn-row">
+        <button class="ibtn" onclick="document.getElementById('fi').click()" title="Upload image">📎</button>
+        <button class="sbtn" id="sbtn" onclick="send()" title="Send">&#10148;</button>
+      </div>
+    </div>
+    <input type="file" id="fi" accept="image/jpeg,image/png,image/gif,image/webp" multiple onchange="onFiles(event)"/>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const chat   = document.getElementById('chat');
+const inp    = document.getElementById('inp');
+const sbtn   = document.getElementById('sbtn');
+const prev   = document.getElementById('prevStrip');
+const sl     = document.getElementById('statusLabel');
+
+let imgs     = []; 
+let history  = []; 
+let loading  = false;
+
+// ── Status check ─────────────────────────────────────────────
+async function checkStatus(){
+  try{
+    const r = await fetch('/api/health');
+    const d = await r.json();
+    if(d.hasApiKey){ sl.textContent='AI Online'; sl.parentElement.style.color='var(--g1)'; }
+    else{ sl.textContent='Offline Mode'; sl.parentElement.style.color='var(--amber)'; }
+  }catch(e){ sl.textContent='Server Offline'; sl.parentElement.style.color='var(--red)'; }
+}
+checkStatus();
+
+// ── Textarea resize ───────────────────────────────────────────
+function resize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+
+// ── Key handler ───────────────────────────────────────────────
+function onKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
+
+// ── Chip ──────────────────────────────────────────────────────
+function chip(t){ inp.value=t; send(); }
+
+// ── File upload ───────────────────────────────────────────────
+function onFiles(e){
+  [...e.target.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{ imgs.push({dataUrl:ev.target.result,file:f}); renderPrev(); };
+    r.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function renderPrev(){
+  prev.innerHTML='';
+  imgs.forEach((img,i)=>{
+    const d=document.createElement('div'); d.className='pthumb';
+    d.innerHTML=`<img src="${img.dataUrl}" alt="preview"/><button class="rx" onclick="rmImg(${i})">×</button>`;
+    prev.appendChild(d);
+  });
+}
+function rmImg(i){ imgs.splice(i,1); renderPrev(); }
+
+// ── Format markdown-ish ───────────────────────────────────────
+function fmt(t){
+  t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  t=t.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  t=t.replace(/`(.+?)`/g,'<code>$1</code>');
+  t=t.replace(/^###\s+(.+)$/gm,'<strong>$1</strong>');
+  t=t.replace(/^##\s+(.+)$/gm,'<strong>$1</strong>');
+  t=t.replace(/^#\s+(.+)$/gm,'<strong>$1</strong>');
+  t=t.replace(/^[-•]\s+(.+)$/gm,'<li>$1</li>');
+  t=t.replace(/^\d+\.\s+(.+)$/gm,'<li>$1</li>');
+  t=t.replace(/(<li>[\s\S]+?<\/li>)\n?(?=<li>|$)/g,'$1');
+  t=t.replace(/(<li>.*<\/li>)/gs,m=>`<ul>${m}</ul>`);
+  t=t.replace(/\n{2,}/g,'</p><p>').replace(/\n/g,'<br/>');
+  t=`<p>${t}</p>`;
+  t=t.replace(/\b(#[1-7]|PET|PETE|HDPE|PVC|LDPE|PP|PS|HIPS)\b/g,'<span class="badge">$1</span>');
+  return t;
+}
+
+// ── Append message ────────────────────────────────────────────
+function addMsg(role, html, thumbs=[], warn='', src=''){
+  document.getElementById('welcome')?.remove();
+  const d=document.createElement('div'); d.className=`msg ${role}`;
+  const ico = role==='bot'?'♻️':'🌿';
+  const ac  = role==='bot'?'bot':'user';
+  let thHtml=''; thumbs.forEach(u=>{ thHtml+=`<img src="${u}" class="uploaded-thumb" alt="uploaded"/>`; });
+  let wHtml  = warn ? `<div class="warn-strip">⚠️ ${warn}</div>` : '';
+  
+  let srcHtml = src === 'openai-api' ? '<div class="src-tag">🤖 OpenAI</div>' :
+                src === 'offline-kb' || src === 'no-api-key' ? '<div class="src-tag">📡 Offline KB</div>' :
+                src === 'error-fallback' ? '<div class="src-tag">📡 Offline KB (API unavailable)</div>' : 
+                src === 'static-reply' ? '<div class="src-tag">👋 Welcome Message</div>' : '';
+
+  d.innerHTML=`<div class="ava ${ac}">${ico}</div>
+    <div>
+      <div class="bubble">${thHtml}${html}</div>
+      ${wHtml}${srcHtml}
+    </div>`;
+  chat.appendChild(d);
+  chat.scrollTo({top:chat.scrollHeight,behavior:'smooth'});
+}
+
+function showTyping(){
+  const d=document.createElement('div'); d.className='msg bot'; d.id='typing';
+  d.innerHTML=`<div class="ava bot">♻️</div>
+    <div class="typing-bub"><div class="td"></div><div class="td"></div><div class="td"></div></div>`;
+  chat.appendChild(d); chat.scrollTo({top:chat.scrollHeight,behavior:'smooth'});
+}
+function rmTyping(){ document.getElementById('typing')?.remove(); }
+
+function toast(m){
+  const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ── Send Logic ────────────────────────────────────────────────
+async function send(){
+  if(loading) return;
+  const text = inp.value.trim();
+  if(!text && imgs.length===0) return;
+
+  // --- SPECIAL HI/HELLO HANDLER ---
+  if (text.toLowerCase() === 'hi' || text.toLowerCase() === 'hello') {
+    addMsg('user', fmt(text));
+    inp.value = ''; inp.style.height = 'auto';
+    
+    const customGreeting = `Hey there! 👋♻️<br/>
+    I'm <strong>EcoBot</strong>, your friendly recycling and sustainability assistant! I'm here to help you:<br/><br/>
+    ♻️ Figure out what can be recycled<br/>
+    🗑️ Sort waste properly<br/>
+    🌱 Start composting<br/>
+    🌍 Live more sustainably<br/>
+    📸 Identify recyclable items from photos<br/><br/>
+    What can I help you with today? Feel free to:<br/>
+    • Ask about recycling specific items<br/>
+    • Upload a photo of something you want to recycle<br/>
+    • Get composting tips<br/>
+    • Learn about reducing waste<br/><br/>
+    Let's make the planet a little greener together! 🌿`;
+
+    showTyping();
+    setTimeout(() => {
+      rmTyping();
+      addMsg('bot', customGreeting, [], '', 'static-reply');
+    }, 600);
+    return; // Stop here, don't call the API
+  }
+
+  loading=true; sbtn.disabled=true;
+  const myImgs=[...imgs]; imgs=[]; renderPrev();
+  inp.value=''; inp.style.height='auto';
+
+  const thumbUrls = myImgs.map(i=>i.dataUrl);
+  addMsg('user', text ? fmt(text) : '<em>(image uploaded)</em>', thumbUrls);
+  showTyping();
+
+  try{
+    const fd = new FormData();
+    if(text) fd.append('message', text);
+    fd.append('history', JSON.stringify(history));
+    myImgs.forEach(i=>fd.append('images', i.file));
+
+    const res  = await fetch('/api/chat',{method:'POST',body:fd});
+    const data = await res.json();
+    rmTyping();
+
+    if(data.error){ 
+        toast('Error: '+data.error); 
+        addMsg('bot', fmt('⚠️ '+data.error)); 
+    } else {
+        addMsg('bot', fmt(data.reply), [], data.warning||'', data.source||'');
+        if(text) history.push({role:'user',content:text});
+        if(data.reply) history.push({role:'model',content:data.reply});
+        if(history.length>20) history=history.slice(-20);
+    }
+  }catch(err){
+    rmTyping();
+    toast('Connection error');
+    addMsg('bot', fmt('🌿 Cannot reach the server.'));
+  }
+  loading=false; sbtn.disabled=false; inp.focus();
+}
+</script>
+</body>
+</html>
